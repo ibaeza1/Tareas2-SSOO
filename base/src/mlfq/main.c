@@ -24,19 +24,20 @@ int main(int argc, char **argv)
   p3 -> pid = 3;
   p4 -> pid = 4;
 
-  list_append(queue,2,p1);
-  list_append(queue,1,p2);
+  list_append(queue,0,p1);
+  list_append(queue,0,p2);
   list_append(queue,1,p3);
-  list_append(queue,1,p4);*/
 
-  /*int cola = revisar_colas(queue,atoi(argv[3]));
+  int cola = revisar_colas(queue,atoi(argv[3]));
   display(queue,atoi(argv[3]));
-  printf("En la cola [%d] hay procesos \n ", cola);*/
+  printf("En la cola [%d] hay procesos \n ", cola);
+  printf("hay proceso = [%d] \n", is_in_queue(queue,p2 -> pid));*/
   simulation(queue,atoi(argv[3]),3, argv[1]);
 
    
   list_destroy(queue,atoi(argv[3]));
 
+ 
   free(queue);
 
 }

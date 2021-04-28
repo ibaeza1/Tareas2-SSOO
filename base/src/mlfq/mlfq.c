@@ -1,3 +1,8 @@
+
+
+
+
+
 #include "mlfq.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,7 +64,7 @@ void add_process(Queue* queue, int num_process, InputFile* file_data, int cycle_
 	
 	for (int i = 0; i < num_process; i++)
 	{
-		if (atoi(file_data -> lines[i][2]) == cycle_count)
+		if (atoi(file_data -> lines[i][2]) == cycle_count && is_in_queue(queue, atoi(file_data -> lines[i][1])) == 0)
 		{
 				
 			Process* process = malloc(sizeof(Process));
@@ -82,7 +87,21 @@ void add_process(Queue* queue, int num_process, InputFile* file_data, int cycle_
 	
 }
 
+int is_in_queue(Queue* queue, int pid){
+	Process* temp = queue[0].head;
+	int esta = 0;
+	while (temp != NULL)
+	{
+		if (temp -> pid == pid)
+		{
+			esta = 1;
+			break;
+		}
+		temp = temp -> next;
+	}
 
+	return esta;
+}
 
 void change_priority(Queue* queue, int priority1, int priority2, Process* proceso){
 	Process* temp = queue[priority1].head, *prev;
@@ -167,25 +186,22 @@ void display(Queue* array, int number_queues){
 		printf("cola de quantum %d \n", array[i].quantum);
 
 		if (temp == NULL)
-                {
+        {
 			printf("array[%d] has no elements\n", i);
-			
-
 		}
-                else
-                {
-
+        else
+        {
 			printf("array[%d] has elements-: ", i);
-			
 			while (temp != NULL)
             {
 				printf("pid= %d - init_time = %d ------ \t", temp->pid,temp->init_time);
 				temp = temp->next;
 			}
 			printf("\n");
-
 		}
+		free(temp);
 	}
+
 }
 
 void list_append(Queue* queue,int priority, Process* proceso)
@@ -334,7 +350,7 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 
 
 	
-/*AGREGO TODOS LOS PROCESOS QUE LLEGAN EN TIEMPO 0 A LA COLA*/
+/*AGREGO TODOS LOS PROCESOS QUE LLEGAN EN TIEMPO 0 A LA COLA
 	for (int i = 0; i < num_process1; i++)
 	{
 		if (atoi(file_data -> lines[i][2]) == 0){
@@ -355,12 +371,12 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 
 		}
 
-	}
+	}*/
 	
 
 
-
-	int cycle_count = 1;
+	int primer_proceso = atoi(file_data -> lines[0][2]);
+	int cycle_count = 0;
 	int process_count = 0;
 	int running_process = 0;
 
@@ -385,15 +401,11 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 			}
 
 			printf("ENTRANDO A LA COLA [%d] Y QUANTUM [%d] \n", queue_counter, queue[queue_counter].quantum);
-
 			printf("\n");
 
-
-
-			
 			Process* temp = queue[queue_counter].head;
 
-			if (temp == NULL) /*SI NO HAY NINGÚN PROCESO A LA COLA SE CAMBIA DE COLA*/
+			if (temp == NULL && cycle_count > primer_proceso) /*SI NO HAY NINGÚN PROCESO A LA COLA SE CAMBIA DE COLA*/
 			{
 				printf("debig\n");
 				queue_counter += 1;
@@ -402,7 +414,39 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 				printf("\n");
 				free(temp);
 
-			}else{
+			}else if(temp == NULL && cycle_count < primer_proceso)
+			{
+				printf("\n ############ CICLO [%d] ###########\n \n ", cycle_count);
+				cycle_count += 1;
+
+
+			}else if(temp == NULL && cycle_count == primer_proceso)
+			{
+				for (int i = 0; i < num_process1; i++)
+					{
+						if (atoi(file_data -> lines[i][2]) == primer_proceso)
+						{
+							Process* process = malloc(sizeof(Process));
+							process -> pid = atoi(file_data -> lines[i][1]);
+							process -> state = "READY";
+							process -> init_time = atoi(file_data -> lines[i][2]);
+							process -> name = file_data -> lines[i][0];
+							process -> cycles = atoi(file_data -> lines[i][3]);
+							process -> cycle_count = atoi(file_data -> lines[i][3]);
+							process -> wait = atoi(file_data -> lines[i][4]);
+							process -> waiting_delay = atoi(file_data -> lines[i][5]);
+							process -> priority = 0;
+							process -> quantum = queue[i].quantum;
+							process -> next = NULL;
+							
+							insert_process(queue,0,process,0);
+
+						}
+
+					}
+
+			}else
+			{
 				
 				while (temp != NULL)
 				{

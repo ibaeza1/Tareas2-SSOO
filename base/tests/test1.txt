@@ -1,6 +1,6 @@
 3
-Chrome 1 0 20 10 20
+Chrome 1 1 20 10 20
 Firefox 2 29 20 10 10
-Safari 3 2 30 5 8
+Safari 3 3 30 5 8
 
 

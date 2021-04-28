@@ -45,4 +45,5 @@ void list_append(Queue* queue,int priority, Process* proceso);
 void simulation(Queue* queue, int num_queues, int num_procesos,  char*file);
 void change_priority(Queue* queue, int priority1, int priority2, Process* proceso);
 int revisar_colas(Queue* queue,int number_queues);
+int is_in_queue(Queue* queue, int pid);
 
