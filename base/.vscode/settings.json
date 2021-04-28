@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "string.h": "c",
+        "algorithm": "c",
+        "mlfq.h": "c",
+        "math.h": "c"
+    }
+}
