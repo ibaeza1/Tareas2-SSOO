@@ -104,13 +104,14 @@ int is_in_queue(Queue* queue, int pid){
 }
 
 void change_priority(Queue* queue, int priority1, int priority2, Process* proceso){
+	
+						
 	Process* temp = queue[priority1].head, *prev;
 
 	Process* temp2 = queue[priority2].head;
 	
 
 	
-
 
 	if (temp != NULL && temp -> pid == proceso -> pid)
 	{
@@ -130,7 +131,7 @@ void change_priority(Queue* queue, int priority1, int priority2, Process* proces
 			prev -> next = temp -> next;
 			
 		}
-		
+								
 		
 	}
 	proceso -> next = NULL;
@@ -338,7 +339,7 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 		{
 			if (atoi(file_data ->lines[i][2]) > atoi(file_data ->lines[j][2]))
 			{
-			printf("devug\n");
+
 				temp = file_data ->lines[i];    
                	file_data ->lines[i] = file_data ->lines[j];    
                	file_data ->lines[j] = temp;   
@@ -407,7 +408,7 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 
 			if (temp == NULL && cycle_count > primer_proceso) /*SI NO HAY NINGÚN PROCESO A LA COLA SE CAMBIA DE COLA*/
 			{
-				printf("debig\n");
+				
 				queue_counter += 1;
 				printf("CAMBIANDO DE COLA A LA COLA [%d] - \n",queue_counter);
 
@@ -469,12 +470,29 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 					/*ESTE IF REVISA SI LA CANTIDAD DE CICLOS AUN NO SE ACABA Y AÚN QUEDA QUANTUM*/
 					if (temp -> cycle_count > 0 && temp -> quantum > 0)
 					{
-
-						if ((temp -> cycles - temp -> cycle_count) == temp -> wait)/*ESTE IF ES PARA EL WAIT POR IMPLEMENTAR*/
+						
+						if ((temp -> cycles - temp -> cycle_count) == temp -> wait && temp -> wait != 0)/*ESTE IF ES PARA EL WAIT POR IMPLEMENTAR*/
 						{
 							printf("EL PROCESO [%d] DEBE ESPERAR\n \n ", temp -> pid);
-						}
+							Process* se_cambia = temp; /*SE CREA UN PROCESO AUXILIAR*/
+							int id_aux = temp -> pid;
+							int priority = temp -> priority;
+							se_cambia -> pid = id_aux;
+							se_cambia -> priority = 0;
+							se_cambia -> quantum = queue[0].quantum;
+							se_cambia -> state = "WAITING";
+							temp = temp -> next; /*SE PASA AL PROCESO SIGUIENTE*/
+							
+							change_priority(queue,priority,0,se_cambia);
+							
+							printf("debig\n");
+							running_process = 0;
+							printf("LA COLA SE VE ASI: \n \n");
+							display(queue,5);
 						
+							
+						}else
+						{
 						printf("EL PROCESO DE PID [%d] SIGUE CORRIENDO - ", temp -> pid);
 						running_process = 1; /*MUESTRA QUE HAY UN PROCESO CORRIENDO ASI QUE NO SE PUEDE CAMBIAR DE COLA SI ES QUE HAY UN PROCESO DE MAYOR PRIORIDAD*/
 						temp -> cycle_count -= 1; /*SE DISMINUYE EN 1 LA CANTIDAD DE CICLOS QUE LE QUEDAN AL PROCESO*/
@@ -483,6 +501,9 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 						printf("\n");
 						printf("LA COLA SE VE ASI: \n \n");
 						display(queue,5);
+						}
+						
+
 
 					/*ESTE IF ES PARA VER SI SE ACABAN LOS CICLOS CUANDO HAY QUANTUM O CUANDO EL QUANTUM Y LOS CICLOS SE ACABAN
 					AL MISMO TIEMPO*/
@@ -508,6 +529,8 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 						int id_aux = temp -> pid;
 						se_cambia -> pid = id_aux;
 						se_cambia -> priority += 1;
+						se_cambia -> cycle_count -= 1;
+						
 						se_cambia -> quantum = queue[temp -> priority].quantum;
 						temp = temp -> next; /*SE PASA AL PROCESO SIGUIENTE*/
 						printf("EL PROCESO DE PID [%d] CAMBIA DE PRIORIDAD - AHORA SU QUANTUM ES [%d] Y SU PRIORIDAD ES [%d] \n \n", se_cambia -> pid,se_cambia -> quantum,se_cambia -> priority );
