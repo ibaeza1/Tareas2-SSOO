@@ -19,7 +19,7 @@ Queue* init_queue(int number_queues, int q){
 	
 	int i = 0;
 	for (i = 0; i < number_queues; i++)
-  {
+  	{
 		queue[i].head = NULL;
 		queue[i].tail = NULL;
 		queue[i].quantum = (number_queues - (number_queues - (i+1))) *q;
@@ -78,6 +78,8 @@ void add_process(Queue* queue, int num_process, InputFile* file_data, int cycle_
 			process -> waiting_delay = atoi(file_data -> lines[i][5]);
 			process -> priority = 0;
 			process -> quantum = queue[0].quantum;
+			process -> salio_de_wait = 0;
+			process -> ciclo_wait = 0;
 			process -> next = NULL;
 			
 			list_append(queue,0,process);
@@ -107,47 +109,60 @@ void change_priority(Queue* queue, int priority1, int priority2, Process* proces
 	
 						
 	Process* temp = queue[priority1].head, *prev;
-
 	Process* temp2 = queue[priority2].head;
 	
 
-	
-
-	if (temp != NULL && temp -> pid == proceso -> pid)
+	if (priority1 == 0 && priority2 == 0)
 	{
-		queue[priority1].head = temp -> next;
+		Process* temp3 = proceso;
+		int id_aux = proceso -> pid;
 		
-	}else{
-		while (temp != NULL && temp -> pid != proceso -> pid)
-		{
-			prev = temp;
-			temp = temp -> next;
-		}
+		delete_process(queue,0,id_aux);
+		temp3 -> pid = id_aux;
+		list_append(queue,0,temp3);
 
-		if (temp == NULL)
+	}else{
+		if (temp != NULL && temp -> pid == proceso -> pid)
 		{
-			printf("el nodo no esta \n");
+			queue[priority1].head = temp -> next;
+			
 		}else{
-			prev -> next = temp -> next;
+			while (temp != NULL && temp -> pid != proceso -> pid)
+			{
+				prev = temp;
+				temp = temp -> next;
+			}
+
+			if (temp == NULL)
+			{
+				printf("el nodo no esta \n");
+			}else{
+				prev -> next = temp -> next;
+				
+			}
+									
 			
 		}
-								
-		
-	}
-	proceso -> next = NULL;
+
+		proceso -> next = NULL;
 		if (temp2 == NULL)
-	{
-		/* code */
-		queue[priority2].head = proceso;
-	}else{
-		while (temp2 -> next != NULL)
 		{
-			temp2 = temp2 -> next;
+			/* code */
+			queue[priority2].head = proceso;
+		}else
+		{
+			while (temp2 -> next != NULL)
+			{
+				temp2 = temp2 -> next;
+			}
+			
+			temp2 -> next =proceso;
+			
+			
 		}
-		
-		temp2 -> next =proceso;
-		
-		
+	
+	
+
 	}
 
 	
@@ -164,7 +179,7 @@ int revisar_colas(Queue* queue,int number_queues){
 		/* code */
 		Process* temp = queue[i].head;
 
-		if (temp == NULL)
+		if (temp == NULL || (temp ->state == "WAITING" && temp -> next == NULL))
 		{
 			/* code */
 			continue;
@@ -208,12 +223,12 @@ void display(Queue* array, int number_queues){
 void list_append(Queue* queue,int priority, Process* proceso)
 {
 	Process* temp = queue[priority].head;
-
-
+	proceso -> next = NULL;
+	printf("INSERTANDO PROCESO DE ID [%d]\n", proceso -> pid);
 	// Si la lista está vacía entonces queda como el primer elemento
 	if(queue[priority].head == NULL)
 	{
-		printf("INSERTANDO PROCESO DE ID [%d]\n", proceso -> pid);
+		
 		queue[priority].head = proceso;
 		return;
 	}
@@ -269,12 +284,14 @@ void insert_process(Queue* cola, int priority, Process* proceso, int pos){
 
 void delete_process(Queue* cola, int num_queue,int id){
 	Process* temp = cola[num_queue].head, *prev;
-
+	
 	if (temp != NULL && temp -> pid == id)
 	{
+		printf("debug \n");
 		cola[num_queue].head = temp -> next;
-		free(temp);
+		
 	}else{
+		
 		while (temp != NULL && temp -> pid != id )
 		{
 			prev = temp;
@@ -286,7 +303,7 @@ void delete_process(Queue* cola, int num_queue,int id){
 			printf("el nodo no esta \n");
 		}else{
 			prev -> next = temp -> next;
-			free(temp);
+			
 		}
 		
 		
@@ -322,6 +339,39 @@ void list_destroy(Queue* queue, int num_queues)
 }
 
 
+void change_waiting(Queue* queue, int num_queues, int cycle_count, int running_process){
+	
+	for (int i = 0; i < num_queues; i++)
+	{
+		Process* temp = queue[i].head;
+		if (temp == NULL)
+		{	
+			
+			continue;
+		}else{
+			while (temp != NULL)
+			{
+				if(temp -> state == "WAITING" && (cycle_count - temp -> ciclo_wait) >= temp -> waiting_delay) 
+				{
+					printf("EL PROCESO DE PID [%d] SALE DEL ESTADO WAIT Y EMPIEZA A CORRER - ", temp -> pid);
+					temp -> state = "RUNNING";
+					temp -> salio_de_wait = 1;
+					running_process = 1; /*MUESTRA QUE HAY UN PROCESO CORRIENDO ASI QUE NO SE PUEDE CAMBIAR DE COLA SI ES QUE HAY UN PROCESO DE MAYOR PRIORIDAD*/
+					temp -> cycle_count -= 1; /*SE DISMINUYE EN 1 LA CANTIDAD DE CICLOS QUE LE QUEDAN AL PROCESO*/
+					temp -> quantum -= 1; /*DISMINUYE EN 1 LA CANTIDAD DE QUANTUM QUE LE QUEDA AL PROCESO*/
+					printf("LE QUEDAN [%d] CICLOS Y UN QUANTUM DE [%d] \n", temp -> cycle_count,temp -> quantum );
+					printf("\n");
+					printf("LA COLA SE VE ASI: \n \n");
+					display(queue,num_queues);
+				}
+				temp = temp->next;
+			}
+			
+		}
+		
+	}
+}
+
 void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 	/*ABRO EL ARCHIVO PARA SACAR LA PRIMERA LINEA*/
 	int num_process1;
@@ -348,6 +398,13 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 		}
 		
 	}
+
+	for (int i = 0; i < num_process1; i++)
+	{
+		/* code */
+		printf("pid= %d - init_time = %d ------ \t", atoi(file_data ->lines[i][1]),atoi(file_data ->lines[i][2]));
+	}
+	
 
 
 	
@@ -382,12 +439,12 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 	int running_process = 0;
 
 
-	while (process_count <= num_procesos ) /*WHILE PARA CONTAR CUANTOS PROCESOS QUEDAN EN LA COLA*/
+	while (process_count <= num_process1 ) /*WHILE PARA CONTAR CUANTOS PROCESOS QUEDAN EN LA COLA*/
 	{
 		int queue_counter = 0;
 		printf("QUEDAN [%d] PROCESOS \n \n", process_count);
 
-		if (process_count == num_procesos)/*SI SE ACABAN LOS PROCESOS SE SALE DEL WHILE*/
+		if (process_count == num_process1)/*SI SE ACABAN LOS PROCESOS SE SALE DEL WHILE*/
 		{
 			break;
 		}
@@ -396,33 +453,43 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 
 		{
 		
-			if (process_count == num_procesos) /*SI SE ACABAN LOS PROCESOS SE SALE DEL WHILE*/
+			if (process_count == num_process1) /*SI SE ACABAN LOS PROCESOS SE SALE DEL WHILE*/
 			{
 				break;
 			}
 
 			printf("ENTRANDO A LA COLA [%d] Y QUANTUM [%d] \n", queue_counter, queue[queue_counter].quantum);
 			printf("\n");
+								/*if (queue[0].head  != NULL)
+					{
+					/ code 
+						printf("ESTADO DEL PROCESO 0 COLA 0 : [%s]\n", queue[0].head -> state);
+
+					}*/
 
 			Process* temp = queue[queue_counter].head;
 
-			if (temp == NULL && cycle_count > primer_proceso) /*SI NO HAY NINGÚN PROCESO A LA COLA SE CAMBIA DE COLA*/
+			if ((temp == NULL || (temp ->state == "WAITING" && temp -> next == NULL))&& cycle_count > primer_proceso) /*SI NO HAY NINGÚN PROCESO A LA COLA SE CAMBIA DE COLA*/
 			{
 				
 				queue_counter += 1;
 				printf("CAMBIANDO DE COLA A LA COLA [%d] - \n",queue_counter);
-
+				
+				cycle_count += 1;	
+				add_process(queue,num_procesos,file_data,cycle_count);
 				printf("\n");
-				free(temp);
+				
 
-			}else if(temp == NULL && cycle_count < primer_proceso)
+			}else if(temp == NULL && cycle_count < primer_proceso) /* SI AUN NO LLEGA NINGUN PROCESO SE SUMA UN CICLO */
 			{
 				printf("\n ############ CICLO [%d] ###########\n \n ", cycle_count);
+
+
 				cycle_count += 1;
 
 
-			}else if(temp == NULL && cycle_count == primer_proceso)
-			{
+			}else if(temp == NULL && cycle_count == primer_proceso) /* SE AÑADEN TODOS LOS PROCESOS QUE LLEGAN PRIMERO */
+			{	
 				for (int i = 0; i < num_process1; i++)
 					{
 						if (atoi(file_data -> lines[i][2]) == primer_proceso)
@@ -437,7 +504,9 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 							process -> wait = atoi(file_data -> lines[i][4]);
 							process -> waiting_delay = atoi(file_data -> lines[i][5]);
 							process -> priority = 0;
-							process -> quantum = queue[i].quantum;
+							process -> quantum = queue[0].quantum;
+							process -> salio_de_wait = 1;
+							process -> ciclo_wait = 0;
 							process -> next = NULL;
 							
 							insert_process(queue,0,process,0);
@@ -448,66 +517,106 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 
 			}else
 			{
-				
+
+				display(queue,num_queues);
 				while (temp != NULL)
 				{
 					/*ESTE IF ES PARA REVISAR SI HAY PROCESOS EN COLAS DE MAYOR PRIORIDAD. SI HAY PROCESOS EN COLAS ANTERIORES Y NO HAY NINGUN PROCESO
 					CORRIENDO SE SUBE DE COLA*/
-					if (revisar_colas(queue,num_queues) < queue_counter && running_process == 0)
+					change_waiting(queue,num_queues,cycle_count,running_process);
+					int hay_procesos = revisar_colas(queue,num_queues);
+					if (hay_procesos < queue_counter && running_process == 0 && hay_procesos != -1)
 					{
-						printf("COLA EN LA QUE HAY PROCESOS [%d]\n", revisar_colas(queue,num_queues));
-						queue_counter = revisar_colas(queue,num_queues);
+						printf("COLA EN LA QUE HAY PROCESOS [%d]\n", hay_procesos);
+						queue_counter = hay_procesos;
 						break;
 					}
 
 					/*SE VAN AGERGANDO LOS PROCESOS A MEDIDA QUE LLEGA EL CICLO QUE LES TOQUE*/
 					add_process(queue,num_procesos,file_data,cycle_count);
+					
 					printf("\n ############ CICLO [%d] ###########\n \n ", cycle_count);
-
-					temp -> state = "RUNNING";
-
-
-					/*ESTE IF REVISA SI LA CANTIDAD DE CICLOS AUN NO SE ACABA Y AÚN QUEDA QUANTUM*/
-					if (temp -> cycle_count > 0 && temp -> quantum > 0)
+					/*if (queue[0].head  != NULL)
 					{
+					 code 
+						printf("ESTADO DEL PROCESO 0 COLA 0 : [%s] - CICLO WAIT : [%d] \n", queue[0].head -> state,queue[0].head -> ciclo_wait);
+
+					}*/
+					printf("ESTADO DEL PROCESO [%d] - [%s]\n", temp -> pid, temp -> state);
+					
+					
+					
+
+					if (temp -> state == "WAITING" && (cycle_count - temp -> ciclo_wait) < temp -> waiting_delay) /*SI SE ESTA EN ESTADO WAIT SE PASA AL SIGUIENTE */
+					{	
+						printf("EL PROCESO [%d] ESTA ESPERANDO \n",temp -> pid );
+						temp -> state = "WAITING";
+						temp = temp -> next;
 						
-						if ((temp -> cycles - temp -> cycle_count) == temp -> wait && temp -> wait != 0)/*ESTE IF ES PARA EL WAIT POR IMPLEMENTAR*/
+						printf("EL PROCESO DE PID [%d] SIGUE CORRIENDO - ", temp -> pid);
+
+						running_process = 1; /*MUESTRA QUE HAY UN PROCESO CORRIENDO ASI QUE NO SE PUEDE CAMBIAR DE COLA SI ES QUE HAY UN PROCESO DE MAYOR PRIORIDAD*/
+						temp -> cycle_count -= 1; /*SE DISMINUYE EN 1 LA CANTIDAD DE CICLOS QUE LE QUEDAN AL PROCESO*/
+						temp -> quantum -= 1; /*DISMINUYE EN 1 LA CANTIDAD DE QUANTUM QUE LE QUEDA AL PROCESO*/
+						printf("LE QUEDAN [%d] CICLOS Y UN QUANTUM DE [%d] \n", temp -> cycle_count,temp -> quantum );
+						printf("\n");
+
+						printf("LA COLA SE VE ASI: \n \n");
+						display(queue,5);
+
+					}else if (temp -> cycle_count > 0 && temp -> quantum > 0 && (temp -> state == "RUNNING" || temp -> state == "READY")) /*ESTE IF REVISA SI LA CANTIDAD DE CICLOS AUN NO SE ACABA Y AÚN QUEDA QUANTUM*/
+					{	
+						
+						 if ((temp -> cycles - temp -> cycle_count) == temp -> wait && temp -> wait != 0  && temp -> salio_de_wait == 1)/*ENTRA A ESTADO WAIT*/
 						{
 							printf("EL PROCESO [%d] DEBE ESPERAR\n \n ", temp -> pid);
 							Process* se_cambia = temp; /*SE CREA UN PROCESO AUXILIAR*/
 							int id_aux = temp -> pid;
 							int priority = temp -> priority;
 							se_cambia -> pid = id_aux;
-							se_cambia -> priority = 0;
-							se_cambia -> quantum = queue[0].quantum;
+							if (priority == 0)
+							{
+								se_cambia -> priority = 0;
+								se_cambia -> quantum = queue[0].quantum;
+							}else{
+								se_cambia -> priority = queue_counter-1;
+								se_cambia -> quantum = queue[queue_counter-1].quantum;
+							}
 							se_cambia -> state = "WAITING";
+							se_cambia -> ciclo_wait = cycle_count;
+							se_cambia -> salio_de_wait = 0;
+							se_cambia -> cycles = temp -> cycle_count;
+							running_process = 0;
+							change_priority(queue,priority,se_cambia -> priority,se_cambia);
 							temp = temp -> next; /*SE PASA AL PROCESO SIGUIENTE*/
 							
-							change_priority(queue,priority,0,se_cambia);
 							
-							printf("debig\n");
-							running_process = 0;
+							
 							printf("LA COLA SE VE ASI: \n \n");
 							display(queue,5);
-						
 							
-						}else
-						{
-						printf("EL PROCESO DE PID [%d] SIGUE CORRIENDO - ", temp -> pid);
-						running_process = 1; /*MUESTRA QUE HAY UN PROCESO CORRIENDO ASI QUE NO SE PUEDE CAMBIAR DE COLA SI ES QUE HAY UN PROCESO DE MAYOR PRIORIDAD*/
-						temp -> cycle_count -= 1; /*SE DISMINUYE EN 1 LA CANTIDAD DE CICLOS QUE LE QUEDAN AL PROCESO*/
-						temp -> quantum -= 1; /*DISMINUYE EN 1 LA CANTIDAD DE QUANTUM QUE LE QUEDA AL PROCESO*/
-						printf("LE QUEDAN [%d] CICLOS Y UN QUANTUM DE [%d] \n", temp -> cycle_count,temp -> quantum );
-						printf("\n");
-						printf("LA COLA SE VE ASI: \n \n");
-						display(queue,5);
+							
+						}else{
+
+							printf("EL PROCESO DE PID [%d] SIGUE CORRIENDO - ", temp -> pid);
+							temp -> state = "RUNNING";
+							running_process = 1; /*MUESTRA QUE HAY UN PROCESO CORRIENDO ASI QUE NO SE PUEDE CAMBIAR DE COLA SI ES QUE HAY UN PROCESO DE MAYOR PRIORIDAD*/
+							temp -> cycle_count -= 1; /*SE DISMINUYE EN 1 LA CANTIDAD DE CICLOS QUE LE QUEDAN AL PROCESO*/
+							temp -> quantum -= 1; /*DISMINUYE EN 1 LA CANTIDAD DE QUANTUM QUE LE QUEDA AL PROCESO*/
+							printf("LE QUEDAN [%d] CICLOS Y UN QUANTUM DE [%d] \n", temp -> cycle_count,temp -> quantum );
+							printf("\n");
+							printf("LA COLA SE VE ASI: \n \n");
+							display(queue,5);
 						}
+						
+
+						
 						
 
 
 					/*ESTE IF ES PARA VER SI SE ACABAN LOS CICLOS CUANDO HAY QUANTUM O CUANDO EL QUANTUM Y LOS CICLOS SE ACABAN
 					AL MISMO TIEMPO*/
-					}else if ((temp -> cycle_count == 0 && temp -> quantum > 0) || (temp -> cycle_count == 0 && temp -> quantum == 0))
+					}else if (((temp -> cycle_count == 0 && temp -> quantum > 0) || (temp -> cycle_count == 0 && temp -> quantum == 0)) && temp -> state == "RUNNING")
 					{
 						
 						temp -> state = "FINISH";
@@ -523,14 +632,14 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file){
 
 
 					/*ESTE IF DICE SI AUN QUEDAN CICLOS PERO NO QUANTUM*/
-					}else if(temp -> cycle_count > 0 && temp -> quantum == 0){
+					}else if(temp -> cycle_count > 0 && temp -> quantum == 0 && temp -> state == "RUNNING"){
+
 	
 						Process* se_cambia = temp; /*SE CREA UN PROCESO AUXILIAR*/
 						int id_aux = temp -> pid;
 						se_cambia -> pid = id_aux;
 						se_cambia -> priority += 1;
 						se_cambia -> cycle_count -= 1;
-						
 						se_cambia -> quantum = queue[temp -> priority].quantum;
 						temp = temp -> next; /*SE PASA AL PROCESO SIGUIENTE*/
 						printf("EL PROCESO DE PID [%d] CAMBIA DE PRIORIDAD - AHORA SU QUANTUM ES [%d] Y SU PRIORIDAD ES [%d] \n \n", se_cambia -> pid,se_cambia -> quantum,se_cambia -> priority );

@@ -19,8 +19,10 @@ struct process{
     int cycles;
     int cycle_count;
     int wait;
+    int ciclo_wait;
     int quantum;
     int waiting_delay;
+    int salio_de_wait;
     Process* next;
 
 
@@ -46,4 +48,5 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char*file);
 void change_priority(Queue* queue, int priority1, int priority2, Process* proceso);
 int revisar_colas(Queue* queue,int number_queues);
 int is_in_queue(Queue* queue, int pid);
+void change_waiting(Queue* queue, int num_queues, int cycle_count, int running_process);
 
