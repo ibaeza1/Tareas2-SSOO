@@ -41,11 +41,17 @@ int main(int argc, char **argv)
   printf("\n");
   reset_queue(queue,atoi(argv[3]));
   display(queue,atoi(argv[3]));*/
+   FILE* output_file;
+    char buf[0x100];
+    snprintf(buf, sizeof(buf), "%s", argv[2]);
+    output_file = fopen(buf,"w");
+fclose(output_file);
+output_file = fopen(buf,"a");
+  simulation(queue,atoi(argv[3]),3, argv[1], atoi(argv[5]), output_file);
 
-  simulation(queue,atoi(argv[3]),3, argv[1], atoi(argv[5]));
-
- 
+ fclose(output_file);
   
+    
 
  
   free(queue);

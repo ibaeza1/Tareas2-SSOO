@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <stdbool.h>
 
 #include "../file_manager/manager.h"
 
@@ -18,6 +19,8 @@ RUNNING = 1;
 WAITING = 2;
 FINISH = 3;
 */
+int cola_wait = 1000;
+bool salio_wait = false;
 
 Queue* init_queue(int number_queues, int q){
 	Queue* queue = malloc(number_queues * sizeof(Queue));
@@ -90,7 +93,9 @@ void add_process(Queue* queue, int num_process, InputFile* file_data, int cycle_
 			process -> turnos_cpu = 0;
 			process -> turnaround = 0;
 			process -> response = 0;
-			process -> waiting_time = 0;
+			process -> active_time = 0;
+			process -> entra_primera_vez = false;
+			process -> primera_vez = 0;
 			
 			list_append(queue,0,process,0);
 		}
@@ -385,8 +390,14 @@ void change_waiting(Queue* queue, int num_queues, int cycle_count, int running_p
 				if(temp -> state == 2 && (cycle_count - temp -> ciclo_wait) >= temp -> waiting_delay) 
 				{
 					printf("EL PROCESO DE PID [%d] SALE DEL ESTADO WAIT Y EMPIEZA A CORRER - ", temp -> pid);
-					temp -> state = 1;
+					temp -> state = 0;
 					temp -> salio_de_wait = 1;
+					if (temp -> priority <= cola_wait)
+					{
+						cola_wait = temp -> priority;
+					}
+					salio_wait = true;
+					
 
 				}
 				temp = temp->next;
@@ -459,7 +470,7 @@ void reset_queue(Queue* queue, int num_queues){
 	
 }
 
-void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int S){
+void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int S, FILE* output_file){
 	/*ABRO EL ARCHIVO PARA SACAR LA PRIMERA LINEA*/
 	int num_process1;
 	FILE* file1 = fopen(file,"r");
@@ -515,6 +526,7 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 	int running_process = 0;
 	int reset = 0;
 	int ciclos_extra = 0;
+
 	while (process_count <= num_process1 ) /*WHILE PARA CONTAR CUANTOS PROCESOS QUEDAN EN LA COLA*/
 	{
 		int queue_counter = 0;
@@ -525,7 +537,7 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 			break;
 		}
 		
-		while (queue_counter <= num_queues) /*WHILE PARA CAMBIAR DE COLA*/
+		while (queue_counter < num_queues) /*WHILE PARA CAMBIAR DE COLA*/
 		{
 			if (process_count == num_process1) /*SI SE ACABAN LOS PROCESOS SE SALE DEL WHILE*/
 			{
@@ -568,7 +580,9 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 							process -> turnos_cpu = 0;
 							process -> turnaround = 0;
 							process -> response = 0;
-							process -> waiting_time = 0;
+							process -> active_time = 0;
+							process -> entra_primera_vez = false;
+							process -> primera_vez = 0;
 							
 							list_append(queue,0,process,0);
 
@@ -609,6 +623,17 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 					CORRIENDO SE SUBE DE COLA*/
 					
 					change_waiting(queue,num_queues,cycle_count,running_process);
+					if (salio_wait == true)
+					{
+						if(cola_wait <= temp -> priority){
+							queue_counter = cola_wait;
+							salio_wait = false;
+							cola_wait = 1000;
+							break;
+						}
+					}
+					
+
 					int hay_procesos = revisar_colas(queue,num_queues);
 					if (hay_procesos < queue_counter && running_process == 0 && hay_procesos != -1)
 					{
@@ -677,7 +702,19 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 						
 							
 						}else{
-
+							if (temp -> state == 0)
+							{
+								temp -> turnos_cpu += 1;
+								if (temp -> entra_primera_vez == false)
+								{
+									temp -> primera_vez = cycle_count - temp -> init_time;
+									temp -> entra_primera_vez = true;
+								}
+								
+								
+							}
+							temp -> active_time += 1;
+							
 							printf("EL PROCESO DE PID [%d] SIGUE CORRIENDO - ", temp -> pid);
 							temp -> state = 1;
 							running_process = 1; /*MUESTRA QUE HAY UN PROCESO CORRIENDO ASI QUE NO SE PUEDE CAMBIAR DE COLA SI ES QUE HAY UN PROCESO DE MAYOR PRIORIDAD*/
@@ -697,16 +734,22 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 						
 						temp -> state = 3;
 						int id_aux = temp -> pid;
-						printf("NUMERO DE INTERRUPCIONES DEL PROCESO [%d] : [%d]  --- ",id_aux, temp -> interrupciones);
+						printf("NUMERO DE INTERRUPCIONES DEL PROCESO [%d] : [%d]  --- \n",id_aux, temp -> interrupciones);
+						printf("NUMERO DE TURNOS DE CPU PROCESO [%d] : [%d]  --- \n",id_aux, temp -> turnos_cpu);
+						printf("TURNAROUND TIME PROCESO [%d] : [%d]  --- \n",id_aux, cycle_count - temp -> init_time);
+						printf("RESPONSE PROCESO [%d] : [%d]  --- \n",id_aux, temp -> primera_vez);
+						printf("WAITING TIME PROCESO [%d] : [%d]  --- \n",id_aux, (cycle_count - temp -> init_time - temp -> active_time));
 						printf("EL PROCESO DE PID [%d] TERMINO Y ESTA SIENDO ELIMINADO \n \n", id_aux);
 						printf("QUEDAN [%d] PROCESOS \n \n", process_count);
 						printf("LA COLA SE VE ASI: \n \n");
+						fprintf(output_file,"%s,%d,%d,%d,%d,%d\n",temp -> name,temp -> turnos_cpu,temp -> interrupciones,cycle_count - temp -> init_time, temp -> primera_vez,(cycle_count - temp -> init_time - temp -> active_time));
 						running_process = 0;
 						display(queue,num_queues);
 
 						temp = temp -> next; /*SE PASA AL SIGUIENTE PROCESO*/
 						 /*SE BORRA EL PROCESO DE LA COLA*/
 						process_count += 1; 
+
 						if (temp != NULL && temp -> state != 2)
 						{
 							printf("EL PROCESO DE PID [%d] SIGUE CORRIENDO - ", temp -> pid);
