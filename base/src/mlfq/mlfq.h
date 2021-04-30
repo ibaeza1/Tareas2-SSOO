@@ -13,7 +13,7 @@ typedef struct process Process;
 struct process{
     int pid;
     int priority;
-    char* state;
+    int state;
     char* name;
     int init_time;
     int cycles;
@@ -23,6 +23,11 @@ struct process{
     int quantum;
     int waiting_delay;
     int salio_de_wait;
+    int turnos_cpu;
+    int interrupciones;
+    int turnaround;
+    int response;
+    int waiting_time;
     Process* next;
 
 
