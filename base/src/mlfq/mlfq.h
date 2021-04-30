@@ -43,10 +43,11 @@ void insert_process(Queue* cola, int priority, Process* proceso, int pos);
 void delete_process(Queue* cola, int num_queue,int id);
 void add_process(Queue* queue, int num_process, InputFile* file_data, int cycle_count);
 void list_destroy(Queue* queue, int num_queues);
-void list_append(Queue* queue,int priority, Process* proceso);
-void simulation(Queue* queue, int num_queues, int num_procesos,  char*file);
+void list_append(Queue* queue,int priority, Process* proceso, int se_resetea);
+void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int S);
 void change_priority(Queue* queue, int priority1, int priority2, Process* proceso);
 int revisar_colas(Queue* queue,int number_queues);
 int is_in_queue(Queue* queue, int pid);
 void change_waiting(Queue* queue, int num_queues, int cycle_count, int running_process);
+void reset_queue(Queue* queue, int num_queues);
 
