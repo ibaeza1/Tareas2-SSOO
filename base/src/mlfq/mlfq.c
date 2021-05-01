@@ -798,6 +798,7 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 							temp -> cycle_count -= 1; /*SE DISMINUYE EN 1 LA CANTIDAD DE CICLOS QUE LE QUEDAN AL PROCESO*/
 							temp -> quantum -= 1; /*DISMINUYE EN 1 LA CANTIDAD DE QUANTUM QUE LE QUEDA AL PROCESO*/
 							printf("LE QUEDAN [%d] CICLOS Y UN QUANTUM DE [%d] \n", temp -> cycle_count,temp -> quantum );
+							temp -> state = 1;
 						}
 						/*SE AUMENTA EN 1 EL CONTADOR DE PROCESOS CUANDO SALE UN PROCESO*/
 
