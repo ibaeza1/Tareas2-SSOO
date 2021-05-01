@@ -552,11 +552,7 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 		
 		while (queue_counter < num_queues) /*WHILE PARA CAMBIAR DE COLA*/
 		{
-			if (queue_counter == num_queues)
-			{
-				queue_counter =0;
-			}
-			
+
 			if (process_count == num_process1) /*SI SE ACABAN LOS PROCESOS SE SALE DEL WHILE*/
 			{
 				break;
@@ -633,18 +629,22 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 					
 					add_process(queue,num_process1,file_data,cycle_count);
 					change_waiting(queue,num_queues,cycle_count,running_process);
+					if (temp != NULL)
+					{
+											if (salio_wait == true && running_process == 0)
+					{
+						
+						if(cola_wait <= temp -> priority){
+							printf("debug \n");
 
-						if (salio_wait == true && running_process == 0)
-						{
-							
-							if(cola_wait <= temp -> priority){
-								printf("debug \n");
-
-								cola_wait = 1000000;
-								break;
-							}
+							cola_wait = 1000000;
+							break;
 						}
+					}
 					
+					}
+					
+
 
 					queue_counter += 1;
 					printf("\n");
@@ -863,8 +863,10 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 						
 						
 						
-						running_process = 0;
-						if(queue[0].head != NULL){
+						printf("running process %d \n", running_process);
+						
+						if(queue[0].head != NULL && running_process == 0){
+							printf("hola \n");
 							queue_counter = 0;
 						}
 						
