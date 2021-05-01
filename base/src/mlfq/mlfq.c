@@ -694,6 +694,18 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 						temp = temp -> next;
 						if (temp != NULL && temp -> state != 2)
 						{
+							if (temp -> state == 0)
+							{
+								temp -> turnos_cpu += 1;
+								if (temp -> entra_primera_vez == false)
+								{
+									temp -> primera_vez = cycle_count - temp -> init_time;
+									temp -> entra_primera_vez = true;
+								}
+								
+								
+							}
+							temp -> active_time += 1;
 							printf("EL PROCESO DE PID [%d] SIGUE CORRIENDO - ", temp -> pid);
 							running_process = 1; /*MUESTRA QUE HAY UN PROCESO CORRIENDO ASI QUE NO SE PUEDE CAMBIAR DE COLA SI ES QUE HAY UN PROCESO DE MAYOR PRIORIDAD*/
 							temp -> cycle_count -= 1; /*SE DISMINUYE EN 1 LA CANTIDAD DE CICLOS QUE LE QUEDAN AL PROCESO*/
@@ -793,6 +805,18 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 
 						if (temp != NULL && temp -> state != 2)
 						{
+							if (temp -> state == 0)
+							{
+								temp -> turnos_cpu += 1;
+								if (temp -> entra_primera_vez == false)
+								{
+									temp -> primera_vez = cycle_count - temp -> init_time;
+									temp -> entra_primera_vez = true;
+								}
+								
+								
+							}
+							temp -> active_time += 1;
 							printf("EL PROCESO DE PID [%d] SIGUE CORRIENDO - ", temp -> pid);
 							running_process = 1; /*MUESTRA QUE HAY UN PROCESO CORRIENDO ASI QUE NO SE PUEDE CAMBIAR DE COLA SI ES QUE HAY UN PROCESO DE MAYOR PRIORIDAD*/
 							temp -> cycle_count -= 1; /*SE DISMINUYE EN 1 LA CANTIDAD DE CICLOS QUE LE QUEDAN AL PROCESO*/
@@ -830,6 +854,18 @@ void simulation(Queue* queue, int num_queues, int num_procesos,  char* file, int
 						temp = temp -> next; /*SE PASA AL PROCESO SIGUIENTE*/
 						if (temp != NULL && temp -> state != 2)
 						{
+							if (temp -> state == 0)
+							{
+								temp -> turnos_cpu += 1;
+								if (temp -> entra_primera_vez == false)
+								{
+									temp -> primera_vez = cycle_count - temp -> init_time;
+									temp -> entra_primera_vez = true;
+								}
+								
+								
+							}
+							temp -> active_time += 1;
 							printf("EL PROCESO DE PID [%d] SIGUE CORRIENDO - ", temp -> pid);
 							running_process = 1; /*MUESTRA QUE HAY UN PROCESO CORRIENDO ASI QUE NO SE PUEDE CAMBIAR DE COLA SI ES QUE HAY UN PROCESO DE MAYOR PRIORIDAD*/
 							temp -> cycle_count -= 1; /*SE DISMINUYE EN 1 LA CANTIDAD DE CICLOS QUE LE QUEDAN AL PROCESO*/
